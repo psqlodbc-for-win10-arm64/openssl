@@ -37,28 +37,28 @@ jobs:
 
     - uses: actions/checkout@v5.0.0
       with:
-        repository: psqlodbc-for-win10-arm64/PgBuilder
-        path: PgBuilderGitRoot
-
-    - name: PgBuilder Restore dependencies
-      working-directory: ${{env.GITHUB_WORKSPACE}}/PgBuilderGitRoot/PgBuilder
-      run: dotnet restore
-
-    - name: PgBuilder Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}/PgBuilderGitRoot/PgBuilder
-      run: dotnet build --no-restore
-
-    - uses: actions/checkout@v5.0.0
-      with:
         repository: psqlodbc-for-win10-arm64/Toolings
         path: ToolingsGitRoot
 
     - name: Toolings Restore dependencies
-      working-directory: ${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Toolings
+      working-directory: ToolingsGitRoot/Toolings
       run: dotnet restore
 
     - name: Toolings Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Toolings
+      working-directory: ToolingsGitRoot/Toolings
+      run: dotnet build --no-restore
+
+    - uses: actions/checkout@v5.0.0
+      with:
+        repository: psqlodbc-for-win10-arm64/PgBuilder
+        path: PgBuilderGitRoot
+
+    - name: PgBuilder Restore dependencies
+      working-directory: PgBuilderGitRoot/PgBuilder
+      run: dotnet restore
+
+    - name: PgBuilder Build
+      working-directory: PgBuilderGitRoot/PgBuilder
       run: dotnet build --no-restore
 
     - name: Build OpenSSL Arm64X binaries

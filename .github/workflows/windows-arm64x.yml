@@ -20,6 +20,8 @@ env:
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
+  MSVCRoot: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207
+
 permissions:
   contents: read
 
@@ -66,13 +68,17 @@ jobs:
       shell: pwsh
       run: |
         dotnet run -- openssl-arm64x-prepare `
-         --alt-cc "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" `
-         --alt-ld "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" `
-         --alt-ar "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
+         --alt-cc "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" `
+         --alt-ld "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" `
+         --alt-ar "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
          "$env:GITHUB_WORKSPACE"
+
+        dotnet run -- openssl-arm64x-prepare `
+         --vc-cl   "$env:MSVCRoot/bin/HostARM64/arm64/cl.exe" `
+         --vc-link "$env:MSVCRoot/bin/HostARM64/arm64/link.exe" `
+         --vc-lib  "$env:MSVCRoot/bin/HostARM64/arm64/lib.exe" `
+         "$env:GITHUB_WORKSPACE" `
+         "$env:GITHUB_WORKSPACE/OpenSSL-inst"
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
-
-    - name: where
-      run: where cl.exe

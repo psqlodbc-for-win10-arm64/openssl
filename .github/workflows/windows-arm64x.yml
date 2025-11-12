@@ -30,11 +30,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Perl environment
-      uses: shogo82148/actions-setup-perl@v1.36.0
-      with:
-        distribution: strawberry
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -74,7 +69,7 @@ jobs:
          --alt-cc "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" `
          --alt-ld "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" `
          --alt-ar "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
-         "${{env.GITHUB_WORKSPACE}}"
+         "$env:GITHUB_WORKSPACE"
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2

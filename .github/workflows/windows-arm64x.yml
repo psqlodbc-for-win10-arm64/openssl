@@ -73,12 +73,9 @@ jobs:
          --alt-ar "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
          "$env:GITHUB_WORKSPACE"
 
-        dotnet run -- openssl-arm64x-prepare `
+        dotnet run -- openssl-arm64x-build `
          --vc-cl   "$env:MSVCRoot/bin/HostARM64/arm64/cl.exe" `
          --vc-link "$env:MSVCRoot/bin/HostARM64/arm64/link.exe" `
          --vc-lib  "$env:MSVCRoot/bin/HostARM64/arm64/lib.exe" `
          "$env:GITHUB_WORKSPACE" `
          "$env:GITHUB_WORKSPACE/OpenSSL-inst"
-
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2

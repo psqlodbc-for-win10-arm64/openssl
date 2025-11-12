@@ -1,0 +1,88 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: MSBuild
+
+on:
+  push:
+    branches: [ "master", "Branch_openssl-3.*" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+  VCRoot:   C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC
+  MSVCRoot: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207
+
+permissions:
+  contents: read
+
+jobs:
+  world:
+    runs-on: windows-11-arm
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - uses: actions/checkout@v5.0.0
+      with:
+        repository: psqlodbc-for-win10-arm64/Toolings
+        path: ToolingsGitRoot
+
+    - name: Toolings Restore dependencies
+      working-directory: ToolingsGitRoot
+      run: dotnet restore
+
+    - name: Toolings Build
+      working-directory: ToolingsGitRoot
+      run: dotnet build --no-restore
+
+    - uses: actions/checkout@v5.0.0
+      with:
+        repository: psqlodbc-for-win10-arm64/PgBuilder
+        path: PgBuilderGitRoot
+
+    - name: PgBuilder Restore dependencies
+      working-directory: PgBuilderGitRoot
+      run: dotnet restore
+
+    - name: PgBuilder Build
+      working-directory: PgBuilderGitRoot
+      run: dotnet build --no-restore
+
+    - name: Build OpenSSL Arm64X binaries
+      working-directory: PgBuilderGitRoot/PgBuilder
+      shell: cmd
+      run: |
+        dotnet run -- openssl-arm64x-prepare ^
+         --alt-cc "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" ^
+         --alt-ld "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" ^
+         --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
+         "%GITHUB_WORKSPACE%"
+
+        type makefile
+
+        pushd "%VCRoot%\Auxiliary\Build"
+        call vcvarsarm64.bat
+        popd
+
+        dotnet run -- openssl-arm64x-build ^
+         --vc-cl   "%MSVCRoot%/bin/HostARM64/arm64/cl.exe" ^
+         --vc-link "%MSVCRoot%/bin/HostARM64/arm64/link.exe" ^
+         --vc-lib  "%MSVCRoot%/bin/HostARM64/arm64/lib.exe" ^
+         "%GITHUB_WORKSPACE%" ^
+         "%GITHUB_WORKSPACE%/OpenSSL-inst"

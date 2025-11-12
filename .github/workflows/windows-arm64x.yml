@@ -74,6 +74,8 @@ jobs:
          --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
          "%GITHUB_WORKSPACE%"
 
+        type makefile
+
         pushd "%VCRoot%\Auxiliary\Build"
         call vcvarsarm64.bat
         popd

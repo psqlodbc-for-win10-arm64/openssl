@@ -41,11 +41,11 @@ jobs:
         path: ToolingsGitRoot
 
     - name: Toolings Restore dependencies
-      working-directory: ToolingsGitRoot/Toolings
+      working-directory: ToolingsGitRoot
       run: dotnet restore
 
     - name: Toolings Build
-      working-directory: ToolingsGitRoot/Toolings
+      working-directory: ToolingsGitRoot
       run: dotnet build --no-restore
 
     - uses: actions/checkout@v5.0.0
@@ -54,21 +54,21 @@ jobs:
         path: PgBuilderGitRoot
 
     - name: PgBuilder Restore dependencies
-      working-directory: PgBuilderGitRoot/PgBuilder
+      working-directory: PgBuilderGitRoot
       run: dotnet restore
 
     - name: PgBuilder Build
-      working-directory: PgBuilderGitRoot/PgBuilder
+      working-directory: PgBuilderGitRoot
       run: dotnet build --no-restore
 
     - name: Build OpenSSL Arm64X binaries
-      working-directory: PgBuilderGitRoot/PgBuilder/PgBuilder
+      working-directory: PgBuilderGitRoot/PgBuilder
       shell: pwsh
       run: |
         dotnet run -- openssl-arm64x-prepare `
-         --alt-cc "${{env.GITHUB_WORKSPACE}}/Toolings/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" `
-         --alt-ld "${{env.GITHUB_WORKSPACE}}/Toolings/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" `
-         --alt-ar "${{env.GITHUB_WORKSPACE}}/Toolings/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
+         --alt-cc "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" `
+         --alt-ld "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" `
+         --alt-ar "${{env.GITHUB_WORKSPACE}}/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
          "${{env.GITHUB_WORKSPACE}}"
 
     - name: Add MSBuild to PATH

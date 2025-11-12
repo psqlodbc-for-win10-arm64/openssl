@@ -24,8 +24,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    runs-on: 	windows-11-arm
+  checkout:
+    runs-on: windows-11-arm
 
     steps:
     - uses: actions/checkout@v4
@@ -35,17 +35,59 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+  PgBuilder:
+    needs: [checkout]
+    runs-on: windows-11-arm
+
+    steps:
     - uses: actions/checkout@v5.0.0
       with:
         repository: psqlodbc-for-win10-arm64/PgBuilder
+        clean: false
 
-    - name: Restore dependencies
+    - name: PgBuilder Restore dependencies
       working-directory: PgBuilder
       run: dotnet restore
 
-    - name: Build
+    - name: PgBuilder Build
       working-directory: PgBuilder
       run: dotnet build --no-restore
 
+  Toolings:
+    needs: [checkout]
+    runs-on: windows-11-arm
+
+    steps:
+    - uses: actions/checkout@v5.0.0
+      with:
+        repository: psqlodbc-for-win10-arm64/Toolings
+        clean: false
+
+    - name: Toolings Restore dependencies
+      working-directory: Toolings
+      run: dotnet restore
+
+    - name: Toolings Build
+      working-directory: Toolings
+      run: dotnet build --no-restore
+
+  build-OpenSSL:
+    needs: [PgBuilder, Toolings]
+    runs-on: windows-11-arm
+
+    steps:
+    - name: Build OpenSSL Arm64X binaries
+      working-directory: PgBuilder/PgBuilder
+      shell: pwsh
+      run: |
+        dotnet run -- openssl-arm64x-prepare `
+         --alt-cc "${{env.GITHUB_WORKSPACE}}/Toolings/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" `
+         --alt-ld "${{env.GITHUB_WORKSPACE}}/Toolings/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" `
+         --alt-ar "${{env.GITHUB_WORKSPACE}}/Toolings/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
+         "${{env.GITHUB_WORKSPACE}}"
+
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: where
+      run: where cl.exe

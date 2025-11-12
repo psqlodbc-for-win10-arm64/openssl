@@ -30,6 +30,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Setup Perl environment
+      uses: shogo82148/actions-setup-perl@v1.36.0
+      with:
+        distribution: strawberry
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:

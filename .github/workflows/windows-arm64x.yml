@@ -7,7 +7,7 @@ name: MSBuild
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "Branch_openssl-3.*" ]
   pull_request:
     branches: [ "master" ]
 

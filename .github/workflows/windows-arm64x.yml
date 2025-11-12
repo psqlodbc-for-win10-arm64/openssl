@@ -73,6 +73,8 @@ jobs:
          --alt-ar "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
          "$env:GITHUB_WORKSPACE"
 
+        $ENV:Path += ";$env:MSVCRoot/bin/HostARM64/arm64"
+
         dotnet run -- openssl-arm64x-build `
          --vc-cl   "$env:MSVCRoot/bin/HostARM64/arm64/cl.exe" `
          --vc-link "$env:MSVCRoot/bin/HostARM64/arm64/link.exe" `

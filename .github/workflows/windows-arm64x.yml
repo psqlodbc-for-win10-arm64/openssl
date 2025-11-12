@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  checkout:
+  world:
     runs-on: windows-11-arm
 
     steps:
@@ -35,11 +35,6 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-  PgBuilder:
-    needs: [checkout]
-    runs-on: windows-11-arm
-
-    steps:
     - uses: actions/checkout@v5.0.0
       with:
         repository: psqlodbc-for-win10-arm64/PgBuilder
@@ -53,11 +48,6 @@ jobs:
       working-directory: PgBuilderGitRoot/PgBuilder
       run: dotnet build --no-restore
 
-  Toolings:
-    needs: [checkout]
-    runs-on: windows-11-arm
-
-    steps:
     - uses: actions/checkout@v5.0.0
       with:
         repository: psqlodbc-for-win10-arm64/Toolings
@@ -71,11 +61,6 @@ jobs:
       working-directory: ToolingsGitRoot/Toolings
       run: dotnet build --no-restore
 
-  build-OpenSSL:
-    needs: [PgBuilder, Toolings]
-    runs-on: windows-11-arm
-
-    steps:
     - name: Build OpenSSL Arm64X binaries
       working-directory: PgBuilderGitRoot/PgBuilder/PgBuilder
       shell: pwsh

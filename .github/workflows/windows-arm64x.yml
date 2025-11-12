@@ -20,6 +20,7 @@ env:
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
+  VCRoot:   C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC
   MSVCRoot: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207
 
 permissions:
@@ -65,19 +66,21 @@ jobs:
 
     - name: Build OpenSSL Arm64X binaries
       working-directory: PgBuilderGitRoot/PgBuilder
-      shell: pwsh
+      shell: cmd
       run: |
-        dotnet run -- openssl-arm64x-prepare `
-         --alt-cc "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" `
-         --alt-ld "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" `
-         --alt-ar "$env:GITHUB_WORKSPACE/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" `
-         "$env:GITHUB_WORKSPACE"
+        dotnet run -- openssl-arm64x-prepare ^
+         --alt-cc "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" ^
+         --alt-ld "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" ^
+         --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
+         "%GITHUB_WORKSPACE%"
 
-        $ENV:Path += ";$env:MSVCRoot/bin/HostARM64/arm64"
+        pushd "%VCRoot%\Auxiliary\Build"
+        call vcvarsarm64.bat
+        popd
 
-        dotnet run -- openssl-arm64x-build `
-         --vc-cl   "$env:MSVCRoot/bin/HostARM64/arm64/cl.exe" `
-         --vc-link "$env:MSVCRoot/bin/HostARM64/arm64/link.exe" `
-         --vc-lib  "$env:MSVCRoot/bin/HostARM64/arm64/lib.exe" `
-         "$env:GITHUB_WORKSPACE" `
-         "$env:GITHUB_WORKSPACE/OpenSSL-inst"
+        dotnet run -- openssl-arm64x-build ^
+         --vc-cl   "%MSVCRoot%/bin/HostARM64/arm64/cl.exe" ^
+         --vc-link "%MSVCRoot%/bin/HostARM64/arm64/link.exe" ^
+         --vc-lib  "%MSVCRoot%/bin/HostARM64/arm64/lib.exe" ^
+         "%GITHUB_WORKSPACE%" ^
+         "%GITHUB_WORKSPACE%/OpenSSL-inst"

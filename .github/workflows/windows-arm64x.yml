@@ -88,13 +88,14 @@ jobs:
          --vc-cl   "%MSVCTargetBuildToolsBin%/cl.exe" ^
          --vc-link "%MSVCTargetBuildToolsBin%/link.exe" ^
          --vc-lib  "%MSVCTargetBuildToolsBin%/lib.exe" ^
+         --silent ^
          "%GITHUB_WORKSPACE%" ^
          "%GITHUB_WORKSPACE%/OpenSSL-inst"
 
     - name: Ensure binaries are Arm64X
       shell: pwsh
       run: |
-        # Generated with gpt-4o-mini:
+        # function is written with the help of gpt-4o-mini:
         function Check-ExecutableType {
             param (
                 [string]$ExePath,                  # The path to the executable file

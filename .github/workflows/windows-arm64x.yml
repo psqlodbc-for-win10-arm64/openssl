@@ -20,6 +20,8 @@ env:
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
+  RELEASE_VERSION: "0.0.1"
+
   VCRoot:   C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC
   MSVCRoot: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207
 
@@ -39,6 +41,7 @@ jobs:
         dotnet-version: 8.0.x
 
     - uses: actions/checkout@v5.0.0
+      name: Toolings checkout
       with:
         repository: psqlodbc-for-win10-arm64/Toolings
         path: ToolingsGitRoot
@@ -52,6 +55,7 @@ jobs:
       run: dotnet build --no-restore
 
     - uses: actions/checkout@v5.0.0
+      name: PgBuilder checkout
       with:
         repository: psqlodbc-for-win10-arm64/PgBuilder
         path: PgBuilderGitRoot
@@ -74,8 +78,6 @@ jobs:
          --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
          "%GITHUB_WORKSPACE%"
 
-        type makefile
-
         pushd "%VCRoot%\Auxiliary\Build"
         call vcvarsarm64.bat
         popd
@@ -86,3 +88,20 @@ jobs:
          --vc-lib  "%MSVCRoot%/bin/HostARM64/arm64/lib.exe" ^
          "%GITHUB_WORKSPACE%" ^
          "%GITHUB_WORKSPACE%/OpenSSL-inst"
+
+    - name: Create gh-release dir
+      shell: pwsh
+      run: mkdir gh-release
+
+    - name: Make a zip
+      working-directory: OpenSSL-inst
+      shell: pwsh
+      run: |
+        7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${env:RELEASE_VERSION}.zip" .
+
+    - name: Make a GitHub Release
+      uses: elgohr/Github-Release-Action@v5
+      with:
+        title: v${{ env.RELEASE_VERSION }} (Arm64X)
+        workdir: gh-release
+        prerelease: true

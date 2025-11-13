@@ -74,7 +74,7 @@ jobs:
       working-directory: openssl
       shell: cmd
       run: |
-        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" -- openssl-arm64x-prepare ^
+        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" --no-build -- openssl-arm64x-prepare ^
          --alt-cc "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" ^
          --alt-ld "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" ^
          --alt-ar "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
@@ -86,7 +86,7 @@ jobs:
       run: |
         call "%APPLY_VCVARS%"
 
-        dotnet run -- openssl-arm64x-build ^
+        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" --no-build -- openssl-arm64x-build ^
          --vc-cl   "%MSVCTargetBuildToolsBin%/cl.exe" ^
          --vc-link "%MSVCTargetBuildToolsBin%/link.exe" ^
          --vc-lib  "%MSVCTargetBuildToolsBin%/lib.exe" ^
@@ -134,10 +134,11 @@ jobs:
       run: mkdir gh-release
 
     - name: Make a zip
-      working-directory: OpenSSL-inst
+      working-directory: 'OpenSSL-inst/Program Files/OpenSSL'
       shell: pwsh
       run: |
-        7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${env:RELEASE_VERSION}.zip" .
+        $RELEASE_VERSION_UNDERSCORED = $RELEASE_VERSION(".", "_")
+        7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${env:RELEASE_VERSION_UNDERSCORED}.zip" .
 
     - name: Make a GitHub Release
       uses: xresloader/upload-to-github-release@v1.6.1

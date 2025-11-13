@@ -86,7 +86,7 @@ jobs:
       run: |
         call "%APPLY_VCVARS%"
 
-        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" --no-build -- openssl-arm64x-build ^
+        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" --no-build /p:Platform="AnyCPU" -- openssl-arm64x-build ^
          --vc-cl   "%MSVCTargetBuildToolsBin%/cl.exe" ^
          --vc-link "%MSVCTargetBuildToolsBin%/link.exe" ^
          --vc-lib  "%MSVCTargetBuildToolsBin%/lib.exe" ^

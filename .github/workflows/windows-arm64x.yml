@@ -68,7 +68,7 @@ jobs:
       working-directory: PgBuilderGitRoot
       run: dotnet build --no-restore
 
-    - name: Build OpenSSL Arm64X binaries
+    - name: Configure OpenSSL to build Arm64X binaries
       working-directory: PgBuilderGitRoot/PgBuilder
       shell: cmd
       run: |
@@ -78,6 +78,10 @@ jobs:
          --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
          "%GITHUB_WORKSPACE%"
 
+    - name: Build OpenSSL Arm64X binaries
+      working-directory: PgBuilderGitRoot/PgBuilder
+      shell: cmd
+      run: |
         call "%APPLY_VSVARS%"
 
         dotnet run -- openssl-arm64x-build ^
@@ -87,6 +91,41 @@ jobs:
          "%GITHUB_WORKSPACE%" ^
          "%GITHUB_WORKSPACE%/OpenSSL-inst"
 
+    - name: Ensure binaries are Arm64X
+      shell: pwsh
+      run: |
+        # Generated with gpt-4o-mini:
+        function Check-ExecutableType {
+            param (
+                [string]$ExePath,                  # The path to the executable file
+                [string]$ExpectedFileType          # The expected file type (for example, "X64" or "ARM64")
+            )
+
+            # Check if the executable exists
+            if (-Not (Test-Path $ExePath)) {
+                throw "The executable at '$ExePath' does not exist."
+            }
+
+            # Execute the IsArm64x command and get the output
+            $isArm64xPath = "${env:GITHUB_WORKSPACE}/ToolingsGitRoot/Toolings/IsArm64x/bin/Debug/net8.0/IsArm64x.dll"
+            $output = & dotnet $isArm64xPath $ExePath
+
+            # Trim the output to remove trailing whitespace/newlines
+            $actualFileType = $output.Trim()
+
+            # Compare actual output with expected file type
+            if ($actualFileType -ne $ExpectedFileType) {
+                throw "Expected file type '$ExpectedFileType', but got '$actualFileType'."
+            }
+
+            # Return a success message if the types match
+            return "The executable '$ExePath' is of type '$actualFileType', as expected."
+        }
+
+        Check-ExecutableType "${env:GITHUB_WORKSPACE}/OpenSSL-inst/Program Files/OpenSSL/bin/libcrypto-3-arm64.dll" "Arm64X"
+        Check-ExecutableType "${env:GITHUB_WORKSPACE}/OpenSSL-inst/Program Files/OpenSSL/bin/libssl-3-arm64.dll"    "Arm64X"
+        Check-ExecutableType "${env:GITHUB_WORKSPACE}/OpenSSL-inst/Program Files/OpenSSL/bin/openssl.exe"           "Arm64X"
+        
     - name: Create gh-release dir
       shell: pwsh
       run: mkdir gh-release

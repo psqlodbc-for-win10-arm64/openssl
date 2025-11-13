@@ -98,10 +98,9 @@ jobs:
         7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${env:RELEASE_VERSION}.zip" .
 
     - name: Make a GitHub Release
-      uses: elgohr/Github-Release-Action@v5
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: xresloader/upload-to-github-release@v1.6.1
       with:
-        title: v${{ env.RELEASE_VERSION }} (Arm64X)
-        workdir: gh-release
+        default_release_name: 'v${{ env.RELEASE_VERSION }} (Arm64X)'
+        file: gh-release/*.zip
         prerelease: true
+        verbose: true

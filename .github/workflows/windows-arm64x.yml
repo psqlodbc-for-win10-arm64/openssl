@@ -78,7 +78,7 @@ jobs:
          --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
          "%GITHUB_WORKSPACE%"
 
-        "%APPLY_VSVARS%"
+        call "%APPLY_VSVARS%"
 
         dotnet run -- openssl-arm64x-build ^
          --vc-cl   "%MSVCTargetBuildToolsBin%/cl.exe" ^

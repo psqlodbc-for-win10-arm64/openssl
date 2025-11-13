@@ -22,7 +22,7 @@ env:
 
   RELEASE_VERSION: "3.5.4"
 
-  APPLY_VSVARS: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsarm64.bat'
+  APPLY_VCVARS: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsarm64.bat'
   MSVCTargetBuildToolsBin: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/HostARM64/arm64'
 
 permissions:
@@ -82,7 +82,7 @@ jobs:
       working-directory: PgBuilderGitRoot/PgBuilder
       shell: cmd
       run: |
-        call "%APPLY_VSVARS%"
+        call "%APPLY_VCVARS%"
 
         dotnet run -- openssl-arm64x-build ^
          --vc-cl   "%MSVCTargetBuildToolsBin%/cl.exe" ^
@@ -107,7 +107,7 @@ jobs:
             }
 
             # Execute the IsArm64x command and get the output
-            $isArm64xPath = "${env:GITHUB_WORKSPACE}/ToolingsGitRoot/Toolings/IsArm64x/bin/Debug/net8.0/IsArm64x.dll"
+            $isArm64xPath = "${env:GITHUB_WORKSPACE}/ToolingsGitRoot/IsArm64x/bin/Debug/net8.0/IsArm64x.dll"
             $output = & dotnet $isArm64xPath $ExePath
 
             # Trim the output to remove trailing whitespace/newlines

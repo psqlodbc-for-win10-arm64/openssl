@@ -26,7 +26,7 @@ env:
   MSVCTargetBuildToolsBin: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/HostARM64/arm64'
 
 permissions:
-  contents: read
+  contents: write # allows the action to create a release. For more information, see [Permissions required for GitHub Apps](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-contents).
 
 jobs:
   world:

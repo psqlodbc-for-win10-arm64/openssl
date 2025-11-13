@@ -20,7 +20,7 @@ env:
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
-  RELEASE_VERSION: "3.5.4"
+  RELEASE_VERSION: "3.5.4-SNAPSHOT"
 
   APPLY_VCVARS: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsarm64.bat'
   MSVCTargetBuildToolsBin: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/HostARM64/arm64'
@@ -33,7 +33,9 @@ jobs:
     runs-on: windows-11-arm
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
+      with:
+        path: openssl
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -44,42 +46,42 @@ jobs:
       name: Toolings checkout
       with:
         repository: psqlodbc-for-win10-arm64/Toolings
-        path: ToolingsGitRoot
+        path: Toolings
 
     - name: Toolings Restore dependencies
-      working-directory: ToolingsGitRoot
+      working-directory: Toolings
       run: dotnet restore
 
     - name: Toolings Build
-      working-directory: ToolingsGitRoot
+      working-directory: Toolings
       run: dotnet build --no-restore
 
     - uses: actions/checkout@v5.0.0
       name: PgBuilder checkout
       with:
         repository: psqlodbc-for-win10-arm64/PgBuilder
-        path: PgBuilderGitRoot
+        path: PgBuilder
 
     - name: PgBuilder Restore dependencies
-      working-directory: PgBuilderGitRoot
+      working-directory: PgBuilder
       run: dotnet restore
 
     - name: PgBuilder Build
-      working-directory: PgBuilderGitRoot
+      working-directory: PgBuilder
       run: dotnet build --no-restore
 
     - name: Configure OpenSSL to build Arm64X binaries
-      working-directory: PgBuilderGitRoot/PgBuilder
+      working-directory: openssl
       shell: cmd
       run: |
-        dotnet run -- openssl-arm64x-prepare ^
-         --alt-cc "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" ^
-         --alt-ld "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" ^
-         --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
-         "%GITHUB_WORKSPACE%"
+        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" -- openssl-arm64x-prepare ^
+         --alt-cc "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" ^
+         --alt-ld "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" ^
+         --alt-ar "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
+         "%GITHUB_WORKSPACE%/openssl"
 
     - name: Build OpenSSL Arm64X binaries
-      working-directory: PgBuilderGitRoot/PgBuilder
+      working-directory: openssl
       shell: cmd
       run: |
         call "%APPLY_VCVARS%"
@@ -89,7 +91,7 @@ jobs:
          --vc-link "%MSVCTargetBuildToolsBin%/link.exe" ^
          --vc-lib  "%MSVCTargetBuildToolsBin%/lib.exe" ^
          --silent ^
-         "%GITHUB_WORKSPACE%" ^
+         "%GITHUB_WORKSPACE%/openssl" ^
          "%GITHUB_WORKSPACE%/OpenSSL-inst"
 
     - name: Ensure binaries are Arm64X
@@ -108,7 +110,7 @@ jobs:
             }
 
             # Execute the IsArm64x command and get the output
-            $isArm64xPath = "${env:GITHUB_WORKSPACE}/ToolingsGitRoot/IsArm64x/bin/Debug/net8.0/IsArm64x.dll"
+            $isArm64xPath = "${env:GITHUB_WORKSPACE}/Toolings/IsArm64x/bin/Debug/net8.0/IsArm64x.dll"
             $output = & dotnet $isArm64xPath $ExePath
 
             # Trim the output to remove trailing whitespace/newlines
@@ -142,5 +144,6 @@ jobs:
       with:
         default_release_name: 'v${{ env.RELEASE_VERSION }} (Arm64X)'
         file: gh-release/*.zip
+        draft: false
         prerelease: true
         verbose: true

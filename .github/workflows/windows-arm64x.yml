@@ -136,7 +136,7 @@ jobs:
       shell: pwsh
       run: |
         $RELEASE_VERSION_UNDERSCORED = $env:RELEASE_VERSION.Replace(".", "_")
-        7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${env:RELEASE_VERSION_UNDERSCORED}.zip" .
+        7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${RELEASE_VERSION_UNDERSCORED}.zip" .
 
     - name: Make a GitHub Release
       uses: xresloader/upload-to-github-release@v1.6.1

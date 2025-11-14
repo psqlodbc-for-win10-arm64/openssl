@@ -7,9 +7,7 @@ name: MSBuild
 
 on:
   push:
-    branches: [ "master", "Branch_openssl-3.*" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: [ "Branch_openssl-3.*" ]
 
 env:
   # Path to the solution file relative to the root of the project.
@@ -137,7 +135,7 @@ jobs:
       working-directory: 'OpenSSL-inst/Program Files/OpenSSL'
       shell: pwsh
       run: |
-        $RELEASE_VERSION_UNDERSCORED = $RELEASE_VERSION(".", "_")
+        $RELEASE_VERSION_UNDERSCORED = $RELEASE_VERSION.Replace(".", "_")
         7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${env:RELEASE_VERSION_UNDERSCORED}.zip" .
 
     - name: Make a GitHub Release

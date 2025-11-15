@@ -7,9 +7,7 @@ name: MSBuild
 
 on:
   push:
-    branches: [ "master", "Branch_openssl-3.*" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: [ "Branch_openssl-3.*" ]
 
 env:
   # Path to the solution file relative to the root of the project.
@@ -20,18 +18,22 @@ env:
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
-  VCRoot:   C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC
-  MSVCRoot: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207
+  RELEASE_VERSION: "3.6.0-SNAPSHOT"
+
+  APPLY_VCVARS: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsarm64.bat'
+  MSVCTargetBuildToolsBin: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/HostARM64/arm64'
 
 permissions:
-  contents: read
+  contents: write # allows the action to create a release. For more information, see [Permissions required for GitHub Apps](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-contents).
 
 jobs:
   world:
     runs-on: windows-11-arm
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
+      with:
+        path: openssl
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -39,50 +41,110 @@ jobs:
         dotnet-version: 8.0.x
 
     - uses: actions/checkout@v5.0.0
+      name: Toolings checkout
       with:
         repository: psqlodbc-for-win10-arm64/Toolings
-        path: ToolingsGitRoot
+        path: Toolings
+        submodules: true
 
     - name: Toolings Restore dependencies
-      working-directory: ToolingsGitRoot
+      working-directory: Toolings
       run: dotnet restore
 
     - name: Toolings Build
-      working-directory: ToolingsGitRoot
+      working-directory: Toolings
       run: dotnet build --no-restore
 
     - uses: actions/checkout@v5.0.0
+      name: PgBuilder checkout
       with:
         repository: psqlodbc-for-win10-arm64/PgBuilder
-        path: PgBuilderGitRoot
+        path: PgBuilder
+        submodules: true
 
     - name: PgBuilder Restore dependencies
-      working-directory: PgBuilderGitRoot
+      working-directory: PgBuilder
       run: dotnet restore
 
     - name: PgBuilder Build
-      working-directory: PgBuilderGitRoot
+      working-directory: PgBuilder
       run: dotnet build --no-restore
 
-    - name: Build OpenSSL Arm64X binaries
-      working-directory: PgBuilderGitRoot/PgBuilder
+    - name: Configure OpenSSL to build Arm64X binaries
+      working-directory: openssl
       shell: cmd
       run: |
-        dotnet run -- openssl-arm64x-prepare ^
-         --alt-cc "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" ^
-         --alt-ld "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" ^
-         --alt-ar "%GITHUB_WORKSPACE%/ToolingsGitRoot/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
-         "%GITHUB_WORKSPACE%"
+        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" --no-build -- openssl-arm64x-prepare ^
+         --alt-cc "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjCL/bin/Debug/net8.0-windows/Arm64XDualObjCL.exe" ^
+         --alt-ld "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjLINK/bin/Debug/net8.0-windows/Arm64XDualObjLINK.exe" ^
+         --alt-ar "%GITHUB_WORKSPACE%/Toolings/Arm64XDualObjLIB/bin/Debug/net8.0-windows/Arm64XDualObjLIB.exe" ^
+         "%GITHUB_WORKSPACE%/openssl"
 
-        type makefile
+    - name: Build OpenSSL Arm64X binaries
+      working-directory: openssl
+      shell: cmd
+      run: |
+        call "%APPLY_VCVARS%"
 
-        pushd "%VCRoot%\Auxiliary\Build"
-        call vcvarsarm64.bat
-        popd
-
-        dotnet run -- openssl-arm64x-build ^
-         --vc-cl   "%MSVCRoot%/bin/HostARM64/arm64/cl.exe" ^
-         --vc-link "%MSVCRoot%/bin/HostARM64/arm64/link.exe" ^
-         --vc-lib  "%MSVCRoot%/bin/HostARM64/arm64/lib.exe" ^
-         "%GITHUB_WORKSPACE%" ^
+        dotnet run --project "%GITHUB_WORKSPACE%/PgBuilder/PgBuilder/PgBuilder.csproj" --no-build /p:Platform="AnyCPU" -- openssl-arm64x-build ^
+         --vc-cl   "%MSVCTargetBuildToolsBin%/cl.exe" ^
+         --vc-link "%MSVCTargetBuildToolsBin%/link.exe" ^
+         --vc-lib  "%MSVCTargetBuildToolsBin%/lib.exe" ^
+         --silent ^
+         "%GITHUB_WORKSPACE%/openssl" ^
          "%GITHUB_WORKSPACE%/OpenSSL-inst"
+
+    - name: Ensure binaries are Arm64X
+      shell: pwsh
+      run: |
+        # function is written with the help of gpt-4o-mini:
+        function Check-ExecutableType {
+            param (
+                [string]$ExePath,                  # The path to the executable file
+                [string]$ExpectedFileType          # The expected file type (for example, "X64" or "ARM64")
+            )
+
+            # Check if the executable exists
+            if (-Not (Test-Path $ExePath)) {
+                throw "The executable at '$ExePath' does not exist."
+            }
+
+            # Execute the IsArm64x command and get the output
+            $isArm64xPath = "${env:GITHUB_WORKSPACE}/Toolings/IsArm64x/bin/Debug/net8.0/IsArm64x.dll"
+            $output = & dotnet $isArm64xPath $ExePath
+
+            # Trim the output to remove trailing whitespace/newlines
+            $actualFileType = $output.Trim()
+
+            # Compare actual output with expected file type
+            if ($actualFileType -ne $ExpectedFileType) {
+                throw "Expected file type '$ExpectedFileType', but got '$actualFileType'."
+            }
+
+            # Return a success message if the types match
+            return "The executable '$ExePath' is of type '$actualFileType', as expected."
+        }
+
+        Check-ExecutableType "${env:GITHUB_WORKSPACE}/OpenSSL-inst/Program Files/OpenSSL/bin/libcrypto-3-arm64.dll" "Arm64X"
+        Check-ExecutableType "${env:GITHUB_WORKSPACE}/OpenSSL-inst/Program Files/OpenSSL/bin/libssl-3-arm64.dll"    "Arm64X"
+        Check-ExecutableType "${env:GITHUB_WORKSPACE}/OpenSSL-inst/Program Files/OpenSSL/bin/openssl.exe"           "Arm64X"
+        
+    - name: Create gh-release dir
+      shell: pwsh
+      run: mkdir gh-release
+
+    - name: Make a zip
+      working-directory: 'OpenSSL-inst/Program Files/OpenSSL'
+      shell: pwsh
+      run: |
+        $RELEASE_VERSION_UNDERSCORED = $env:RELEASE_VERSION.Replace(".", "_")
+        7z.exe a -r "${env:GITHUB_WORKSPACE}/gh-release/Win64Arm64XOpenSSL-${RELEASE_VERSION_UNDERSCORED}.zip" .
+
+    - name: Make a GitHub Release
+      uses: xresloader/upload-to-github-release@v1.6.1
+      with:
+        default_release_name: 'v${{ env.RELEASE_VERSION }} (Arm64X)'
+        file: gh-release/*.zip
+        draft: false
+        prerelease: true
+        verbose: true
